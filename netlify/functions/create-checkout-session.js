@@ -36,4 +36,14 @@ exports.handler = async (event) => {
     console.log('PaymentIntent créé avec succès:', paymentIntent);
 
     return {
-      statusCode: 2
+      statusCode: 200,
+      body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
+    };
+  } catch (error) {
+    console.error('Erreur lors de la création du PaymentIntent:', error.message);
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
+};
