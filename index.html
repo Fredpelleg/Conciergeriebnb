@@ -1,35 +1,121 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement de Caution</title>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <h1>Test de Paiement de Caution</h1>
+  <form id="payment-form">
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
+    </div>
+    <div>
+      <label for="reservationId">ID de Réservation:</label>
+      <input type="text" id="reservationId" required>
+    </div>
+    <div>
+      <label for="reservationDuration">Durée de la Réservation (en jours):</label>
+      <input type="number" id="reservationDuration" required>
+    </div>
+    <div id="card-element"></div>
+    <input type="hidden" id="amount" value="5000"> <!-- Montant en centimes -->
+    <button type="submit">Payer la Caution</button>
+  </form>
+  <button id="cancel-button" style="display: none;">Annuler la Caution</button>
+  <div id="error-message" style="color: red;"></div>
+  <script>
+    const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab'); // Utilisez votre clé Stripe publiable
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
 
-exports.handler = async (event) => {
-  const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
+    let paymentIntentId = null;
 
-  try {
-    const now = new Date();
-    const endDate = new Date(now.getTime() + (reservationDuration * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
+    document.getElementById('payment-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      console.log('Form submitted');
+      
+      const amount = document.getElementById('amount').value;
+      const email = document.getElementById('email').value;
+      const reservationId = document.getElementById('reservationId').value;
+      const reservationDuration = document.getElementById('reservationDuration').value;
+      const clientConsent = 'J\'accepte les termes et conditions'; // Vous pouvez changer cela en fonction de vos besoins
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: currency,
-      payment_method_types: ['card'],
-      capture_method: 'manual',
-      description: reservationId,
-      receipt_email: email, // Ajout du champ receipt_email
-      metadata: {
-        email: email,
-        client_consent: clientConsent,
-        reservation_duration: reservationDuration.toString(),
-        end_date: endDate.toISOString(), // Ajout de la date de fin
-      },
+      console.log('Amount:', amount);
+      console.log('Email:', email);
+      console.log('Reservation ID:', reservationId);
+      console.log('Reservation Duration:', reservationDuration);
+      
+      try {
+        const response = await fetch('/.netlify/functions/create-checkout-session', { // Chemin relatif
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, currency: 'eur', email, reservationId, clientConsent, reservationDuration })
+        });
+
+        console.log('Response status:', response.status);
+
+        const result = await response.json();
+        console.log('Result:', result);
+
+        if (response.ok) {
+          const { clientSecret, id } = result;
+          paymentIntentId = id; // Stockez l'ID du PaymentIntent
+          const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                email: email, // Ajout de l'email pour les détails de facturation
+              },
+            },
+          });
+
+          if (error) {
+            document.getElementById('error-message').textContent = error.message;
+          } else if (paymentIntent.status === 'requires_capture') {
+            // L'autorisation est réussie
+            document.getElementById('cancel-button').style.display = 'block';
+            window.location.href = 'success.html';
+          }
+        } else {
+          document.getElementById('error-message').textContent = result.error;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('error-message').textContent = 'An error occurred';
+      }
     });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
-    };
-  } catch (error) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
-};
+    document.getElementById('cancel-button').addEventListener('click', async () => {
+      if (!paymentIntentId) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/.netlify/functions/cancel-authorization', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentIntentId })
+        });
+
+        const result = await response.json();
+        console.log('Cancel result:', result);
+
+        if (response.ok) {
+          alert('Caution annulée avec succès');
+          document.getElementById('cancel-button').style.display = 'none';
+        } else {
+          document.getElementById('error-message').textContent = result.error;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('error-message').textContent = 'An error occurred';
+      }
+    });
+  </script>
+</body>
+</html>
