@@ -8,7 +8,7 @@
 <body>
   <h1>Annulation de la Caution</h1>
   <form id="cancel-form">
-    <input type="email" id="email" placeholder="Email du client" required> <!-- Saisie de l'email -->
+    <input type="email" id="email" placeholder="Email du client" required>
     <button type="submit">Annuler la Caution</button>
   </form>
   <div id="message" style="color: red;"></div>
@@ -24,10 +24,8 @@
         });
 
         const result = await response.json();
-        console.log('Cancel result:', result);
-
         if (response.ok) {
-          document.getElementById('message').style.color = 'green';
+          alert('Caution annulée avec succès');
           document.getElementById('message').textContent = 'Caution annulée avec succès';
         } else {
           document.getElementById('message').textContent = result.error;
