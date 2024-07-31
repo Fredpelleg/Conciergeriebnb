@@ -1,28 +1,50 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  const { email, reservationId } = JSON.parse(event.body);
+  const { reservationId } = JSON.parse(event.body);
+
+  console.log('Annulation de caution pour l\'ID de réservation :', reservationId);
 
   try {
-    const paymentIntents = await stripe.paymentIntents.list({ limit: 100 });
+    // Rechercher les PaymentIntents avec l'ID de réservation dans les métadonnées
+    const paymentIntents = await stripe.paymentIntents.list({
+      limit: 100, // Limite à 100 résultats pour la recherche
+    });
 
-    const intentsToCancel = paymentIntents.data.filter(intent =>
-      intent.metadata.email === email && intent.description === reservationId && intent.status === 'requires_capture'
-    );
+    console.log('PaymentIntents list:', paymentIntents.data);
 
-    const canceledIntents = [];
-    for (const intent of intentsToCancel) {
-      const canceledPaymentIntent = await stripe.paymentIntents.cancel(intent.id);
-      canceledIntents.push(canceledPaymentIntent);
+    // Trouver le PaymentIntent correspondant à l'ID de réservation
+    const paymentIntent = paymentIntents.data.find(pi => pi.metadata.reservationId === reservationId);
+
+    if (!paymentIntent) {
+      console.error('No PaymentIntent found for the given reservation ID');
+      return {
+        statusCode: 302,
+        headers: {
+          Location: '/error.html'
+        },
+        body: JSON.stringify({ error: 'No PaymentIntent found for the given reservation ID' }),
+      };
     }
+
+    console.log('PaymentIntent found:', paymentIntent);
+
+    // Annuler le PaymentIntent
+    const canceledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntent.id);
+
+    console.log('PaymentIntent canceled:', canceledPaymentIntent);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, canceledIntents }),
+      body: JSON.stringify({ success: true, paymentIntent: canceledPaymentIntent }),
     };
   } catch (error) {
+    console.error('Error canceling PaymentIntent:', error.message);
     return {
-      statusCode: 400,
+      statusCode: 302,
+      headers: {
+        Location: '/error.html'
+      },
       body: JSON.stringify({ error: error.message }),
     };
   }
