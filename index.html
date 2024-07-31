@@ -20,7 +20,7 @@
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
-    const stripe = Stripe(process.env.SECRET_PUBLIC_PROD);
+    const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab');
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
