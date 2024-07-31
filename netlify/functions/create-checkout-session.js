@@ -22,4 +22,7 @@ exports.handler = async (event) => {
     console.error('Error creating PaymentIntent:', error.message); // Journaliser l'erreur
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: error.me
+      body: JSON.stringify({ error: error.message }),
+    };
+  }
+};
