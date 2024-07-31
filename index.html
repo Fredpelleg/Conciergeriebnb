@@ -9,18 +9,6 @@
 <body>
   <h1>Test de Paiement de Caution</h1>
   <form id="payment-form">
-    <div>
-      <label for="email">Email:</label>
-      <input type="email" id="email" required>
-    </div>
-    <div>
-      <label for="reservationId">ID de Réservation:</label>
-      <input type="text" id="reservationId" required>
-    </div>
-    <div>
-      <label for="reservationDuration">Durée de la Réservation (en jours):</label>
-      <input type="number" id="reservationDuration" required>
-    </div>
     <div id="card-element"></div>
     <input type="hidden" id="amount" value="5000"> <!-- Montant en centimes -->
     <button type="submit">Payer la Caution</button>
@@ -28,8 +16,7 @@
   <button id="cancel-button" style="display: none;">Annuler la Caution</button>
   <div id="error-message" style="color: red;"></div>
   <script>
-    //const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab'); // Utilisez votre clé Stripe publiable
-    const stripe = Stripe('pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK'); // Utilisez votre clé Stripe publiable
+    const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab');
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
@@ -41,21 +28,13 @@
       console.log('Form submitted');
       
       const amount = document.getElementById('amount').value;
-      const email = document.getElementById('email').value;
-      const reservationId = document.getElementById('reservationId').value;
-      const reservationDuration = document.getElementById('reservationDuration').value;
-      const clientConsent = 'J\'accepte les termes et conditions'; // Vous pouvez changer cela en fonction de vos besoins
-
       console.log('Amount:', amount);
-      console.log('Email:', email);
-      console.log('Reservation ID:', reservationId);
-      console.log('Reservation Duration:', reservationDuration);
       
       try {
-        const response = await fetch('/.netlify/functions/create-checkout-session', { // Chemin relatif
+        const response = await fetch('/.netlify/functions/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, currency: 'eur', email, reservationId, clientConsent, reservationDuration })
+          body: JSON.stringify({ amount, currency: 'eur' })
         });
 
         console.log('Response status:', response.status);
@@ -70,7 +49,7 @@
             payment_method: {
               card: cardElement,
               billing_details: {
-                email: email, // Ajout de l'email pour les détails de facturation
+                name: 'Jenny Rosen',
               },
             },
           });
@@ -78,16 +57,15 @@
           if (error) {
             document.getElementById('error-message').textContent = error.message;
           } else if (paymentIntent.status === 'requires_capture') {
-            // L'autorisation est réussie
             document.getElementById('cancel-button').style.display = 'block';
-            window.location.href = 'success.html';
+            window.location.href = 'https://musical-mousse-b4388f.netlify.app/success.html';
           }
         } else {
           document.getElementById('error-message').textContent = result.error;
         }
       } catch (error) {
         console.error('Error:', error);
-        document.getElementById('error-message').textContent = 'An error occurred';
+        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
       }
     });
 
@@ -114,7 +92,7 @@
         }
       } catch (error) {
         console.error('Error:', error);
-        document.getElementById('error-message').textContent = 'An error occurred';
+        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
       }
     });
   </script>
