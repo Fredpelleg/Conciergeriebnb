@@ -65,10 +65,22 @@
           });
 
           if (error) {
+            console.log('Payment error:', error);
             document.getElementById('error-message').textContent = error.message;
           } else if (paymentIntent.status === 'requires_capture') {
+            console.log('PaymentIntent status:', paymentIntent.status);
             document.getElementById('cancel-button').style.display = 'block';
             window.location.href = 'https://musical-mousse-b4388f.netlify.app/success.html';
           }
         } else {
-          document.getElem
+          console.log('Server error:', result.error);
+          document.getElementById('error-message').textContent = result.error;
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
+      }
+    });
+
+    document.getElementById('cancel-button').addEventListener('click', async () => {
+      i
