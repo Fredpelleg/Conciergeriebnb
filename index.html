@@ -21,7 +21,7 @@
   <button id="cancel-button" style="display: none;">Annuler la Caution</button>
   <div id="error-message" style="color: red;"></div>
   <script>
-    const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab');
+    const stripe = Stripe('pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK');
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
@@ -83,4 +83,17 @@
     });
 
     document.getElementById('cancel-button').addEventListener('click', async () => {
-      i
+      if (!paymentIntentId) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('/.netlify/functions/cancel-authorization', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentIntentId })
+        });
+
+        const result = await response.json();
+        console.log('Cancel result:', result);
+
