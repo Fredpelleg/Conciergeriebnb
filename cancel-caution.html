@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Annulation de Caution</title>
+</head>
+<body>
+  <h1>Annuler une Caution</h1>
+  <form id="cancel-form">
+    <label for="reservationId">ID de Réservation :</label>
+    <input type="text" id="reservationId" name="reservationId" required>
+    <button type="submit">Annuler la Caution</button>
+  </form>
+  <div id="result" style="margin-top: 20px;"></div>
+  <script>
+    document.getElementById('cancel-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const reservationId = document.getElementById('reservationId').value;
+
+      try {
+        const response = await fetch('/.netlify/functions/cancel-caution', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ reservationId }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById('result').textContent = 'Caution annulée avec succès';
+        } else {
+          document.getElementById('result').textContent = `Erreur : ${result.error}`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('result').textContent = 'Une erreur s\'est produite';
+      }
+    });
+  </script>
+</body>
+</html>
