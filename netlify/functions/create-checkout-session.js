@@ -14,6 +14,8 @@ exports.handler = async (event) => {
       metadata: { email: email }, // Ajout de l'email dans les métadonnées
     });
 
+    console.log('Payment Intent created:', paymentIntent);
+
     return {
       statusCode: 200,
       body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
