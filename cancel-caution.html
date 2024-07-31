@@ -27,6 +27,11 @@
           body: JSON.stringify({ reservationId }),
         });
 
+        if (response.redirected) {
+          window.location.href = response.url;
+          return;
+        }
+
         const result = await response.json();
 
         if (response.ok) {
@@ -36,7 +41,7 @@
         }
       } catch (error) {
         console.error('Error:', error);
-        document.getElementById('result').textContent = 'Une erreur s\'est produite';
+        window.location.href = '/error.html';
       }
     });
   </script>
