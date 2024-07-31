@@ -1,33 +1,26 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  const { email } = JSON.parse(event.body);
+  const { email, reservationId } = JSON.parse(event.body);
 
   try {
-    // Rechercher les intents de paiement avec l'email fourni dans les métadonnées
-    const paymentIntents = await stripe.paymentIntents.list({
-      limit: 10, // Vous pouvez ajuster cette limite selon vos besoins
-    });
+    const paymentIntents = await stripe.paymentIntents.list({ limit: 100 });
 
-    // Filtrer les intents de paiement pour trouver celui avec l'email correspondant
-    const paymentIntent = paymentIntents.data.find(intent => intent.metadata.email === email);
+    const intentsToCancel = paymentIntents.data.filter(intent =>
+      intent.metadata.email === email && intent.metadata.reservation_id === reservationId && intent.status === 'requires_capture'
+    );
 
-    if (!paymentIntent) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({ error: 'No payment intent found for the provided email.' }),
-      };
+    const canceledIntents = [];
+    for (const intent of intentsToCancel) {
+      const canceledPaymentIntent = await stripe.paymentIntents.cancel(intent.id);
+      canceledIntents.push(canceledPaymentIntent);
     }
-
-    // Annuler l'intent de paiement trouvé
-    const canceledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntent.id);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, paymentIntent: canceledPaymentIntent }),
+      body: JSON.stringify({ success: true, canceledIntents }),
     };
   } catch (error) {
-    console.log('Error canceling PaymentIntent:', error.message);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message }),
