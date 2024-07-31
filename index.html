@@ -12,6 +12,7 @@
     <div id="card-element"></div>
     <input type="email" id="email" placeholder="Email du client" required>
     <input type="text" id="reservationId" placeholder="ID de Réservation" required>
+    <input type="number" id="reservationDuration" placeholder="Durée de la Réservation (jours)" required>
     <input type="hidden" id="amount" value="5000"> <!-- Montant en centimes -->
     <button type="submit">Payer la Caution</button>
   </form>
@@ -28,12 +29,13 @@
       const amount = document.getElementById('amount').value;
       const email = document.getElementById('email').value;
       const reservationId = document.getElementById('reservationId').value;
+      const reservationDuration = document.getElementById('reservationDuration').value;
 
       try {
         const response = await fetch('/.netlify/functions/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, currency: 'eur', email, reservationId, clientConsent: 'true' })
+          body: JSON.stringify({ amount, currency: 'eur', email, reservationId, clientConsent: 'true', reservationDuration })
         });
 
         const result = await response.json();
