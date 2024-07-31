@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     const paymentIntents = await stripe.paymentIntents.list({ limit: 100 });
 
     const intentsToCancel = paymentIntents.data.filter(intent =>
-      intent.metadata.email === email && intent.description === `ID: ${reservationId}` && intent.status === 'requires_capture'
+      intent.metadata.email === email && intent.description === reservationId && intent.status === 'requires_capture'
     );
 
     const canceledIntents = [];
