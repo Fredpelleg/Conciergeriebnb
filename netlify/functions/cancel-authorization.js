@@ -1,45 +1,26 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
   const { email } = JSON.parse(event.body);
 
   try {
-    // Rechercher le PaymentIntent à partir des métadonnées
+    // Rechercher les intents de paiement avec l'email fourni dans les métadonnées
     const paymentIntents = await stripe.paymentIntents.list({
-      limit: 100, // Limite du nombre de résultats (ajustez si nécessaire)
+      limit: 10, // Vous pouvez ajuster cette limite selon vos besoins
     });
 
+    // Filtrer les intents de paiement pour trouver celui avec l'email correspondant
     const paymentIntent = paymentIntents.data.find(intent => intent.metadata.email === email);
 
     if (!paymentIntent) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: 'PaymentIntent not found' }),
+        body: JSON.stringify({ error: 'No payment intent found for the provided email.' }),
       };
     }
 
-    // Annuler le PaymentIntent
+    // Annuler l'intent de paiement trouvé
     const canceledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntent.id);
-
-    // Mettre à jour la réservation Smoobu pour confirmer l'annulation de la caution
-    const smoobuUpdateUrl = `https://api.smoobu.com/api/v1/bookings/${paymentIntent.metadata.bookingId}`;
-    const updateResponse = await fetch(smoobuUpdateUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SMOOBU_API_TOKEN}`,
-      },
-      body: JSON.stringify({
-        fields: {
-          CautionStatus: 'Cancelled' // Assurez-vous que ce champ personnalisé existe dans Smoobu
-        }
-      })
-    });
-
-    if (!updateResponse.ok) {
-      throw new Error(`Failed to update Smoobu booking: ${updateResponse.statusText}`);
-    }
 
     return {
       statusCode: 200,
