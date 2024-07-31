@@ -12,7 +12,7 @@
     const params = new URLSearchParams(window.location.search);
     const errorMessage = params.get('error');
     if (errorMessage) {
-      document.getElementById('error-message').textContent = errorMessage;
+      document.getElementById('error-message').textContent = decodeURIComponent(errorMessage);
     } else {
       document.getElementById('error-message').textContent = 'Une erreur inconnue s\'est produite.';
     }
