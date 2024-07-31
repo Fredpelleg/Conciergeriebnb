@@ -21,7 +21,7 @@
   <button id="cancel-button" style="display: none;">Annuler la Caution</button>
   <div id="error-message" style="color: red;"></div>
   <script>
-    const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab');
+    const stripe = Stripe(process.env.STRIPE_NEW_SECRET_KEY);
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
