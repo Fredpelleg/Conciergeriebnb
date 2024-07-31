@@ -18,7 +18,7 @@ exports.handler = async (event) => {
     const endDate = new Date(now.getTime() + (parseInt(reservationDuration, 10) * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: parseInt(amount, 10), // Assurez-vous que le montant est un entier
+      amount: parseInt(amount, 10),
       currency: currency,
       payment_method_types: ['card'],
       capture_method: 'manual', // Pour créer une autorisation
@@ -36,14 +36,4 @@ exports.handler = async (event) => {
     console.log('PaymentIntent créé avec succès:', paymentIntent);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
-    };
-  } catch (error) {
-    console.error('Erreur lors de la création du PaymentIntent:', error.message);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
-};
+      statusCode: 2
