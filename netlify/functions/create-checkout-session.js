@@ -9,9 +9,9 @@ exports.handler = async (event) => {
       currency: currency,
       payment_method_types: ['card'],
       capture_method: 'manual',
+      description: `Reservation ID: ${reservationId}`,  // Ajouter l'ID de réservation dans la description
       metadata: {
         email: email,
-        reservation_id: reservationId,  // Assurez-vous que l'ID de réservation est inclus
         client_consent: clientConsent,
         stay_duration: 'X days',
       },
