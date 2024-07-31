@@ -11,7 +11,7 @@ exports.handler = async (event) => {
       capture_method: 'manual',
       metadata: {
         email: email,
-        reservation_id: reservationId,
+        reservation_id: reservationId,  // Assurez-vous que l'ID de réservation est inclus
         client_consent: clientConsent,
         stay_duration: 'X days',
       },
