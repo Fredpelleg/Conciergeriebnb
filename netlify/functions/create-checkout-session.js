@@ -11,7 +11,8 @@ exports.handler = async (event) => {
       currency: currency,
       payment_method_types: ['card'],
       capture_method: 'manual',
-      metadata: { email: email }, // Ajout de l'email dans les métadonnées
+      receipt_email: email, // Ajout de l'email pour les reçus
+      metadata: { email: email },
     });
 
     console.log('Payment Intent created:', paymentIntent);
