@@ -3,19 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Erreur de Paiement</title>
+  <title>Paiement Échoué</title>
 </head>
 <body>
-  <h1>Une erreur s'est produite</h1>
-  <p id="error-message"></p>
+  <h1>Paiement Échoué</h1>
+  <p>Une erreur est survenue lors de votre paiement. Veuillez réessayer.</p>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const errorMessage = params.get('error');
-    if (errorMessage) {
-      document.getElementById('error-message').textContent = decodeURIComponent(errorMessage);
-    } else {
-      document.getElementById('error-message').textContent = 'Une erreur inconnue s\'est produite.';
-    }
+    console.log('Error page loaded');
   </script>
 </body>
 </html>
