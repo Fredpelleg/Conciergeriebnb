@@ -1,15 +1,15 @@
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);  // Use the new secret key
+const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);  // Utilisez la nouvelle clé secrète
 
 exports.handler = async (event) => {
   const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
-  console.log('Received data:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+  console.log('Données reçues:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
 
   if (!amount || !currency || !email || !reservationId || !clientConsent || !reservationDuration) {
-    console.error('All fields are required:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+    console.error('Tous les champs sont requis:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'All fields are required.' }),
+      body: JSON.stringify({ error: 'Tous les champs sont requis.' }),
     };
   }
 
@@ -18,10 +18,10 @@ exports.handler = async (event) => {
     const endDate = new Date(now.getTime() + (parseInt(reservationDuration, 10) * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: parseInt(amount, 10), // Ensure the amount is an integer
+      amount: parseInt(amount, 10), // Assurez-vous que le montant est un entier
       currency: currency,
       payment_method_types: ['card'],
-      capture_method: 'manual', // Create an authorization
+      capture_method: 'manual', // Pour créer une autorisation
       description: reservationId,
       receipt_email: email,
       metadata: {
@@ -33,14 +33,14 @@ exports.handler = async (event) => {
       },
     });
 
-    console.log('PaymentIntent created successfully:', paymentIntent);
+    console.log('PaymentIntent créé avec succès:', paymentIntent);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
     };
   } catch (error) {
-    console.error('Error creating PaymentIntent:', error.message);
+    console.error('Erreur lors de la création du PaymentIntent:', error.message);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message }),
