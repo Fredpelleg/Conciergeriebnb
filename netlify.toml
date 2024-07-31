@@ -1,8 +1,9 @@
 [build]
-  publish = "public"  # Remplacez "public" par le répertoire où vos fichiers statiques sont situés, si nécessaire
+  publish = "/"  # Racine du projet pour les fichiers statiques
   functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
