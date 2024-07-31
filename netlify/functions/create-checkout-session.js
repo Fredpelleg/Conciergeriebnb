@@ -1,4 +1,4 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
 
 exports.handler = async (event) => {
   const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
