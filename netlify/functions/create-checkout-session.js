@@ -19,6 +19,7 @@ exports.handler = async (event) => {
         client_consent: clientConsent,
         reservation_duration: reservationDuration.toString(),
         end_date: endDate.toISOString(), // Ajout de la date de fin
+        is_caution: 'true', // Ajout de la métadonnée is_caution
       },
     });
 
