@@ -1,4 +1,5 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+//const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
 
 exports.handler = async (event) => {
   console.log('Handler invoked for create-checkout-session');
