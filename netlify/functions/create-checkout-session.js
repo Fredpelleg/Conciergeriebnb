@@ -1,12 +1,10 @@
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);  // Use the new secret key
 
 exports.handler = async (event) => {
   const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
-  // Logs de validation des champs
   console.log('Received data:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
 
-  // Vérifiez que toutes les variables sont définies et non nulles
   if (!amount || !currency || !email || !reservationId || !clientConsent || !reservationDuration) {
     console.error('All fields are required:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
     return {
@@ -20,10 +18,10 @@ exports.handler = async (event) => {
     const endDate = new Date(now.getTime() + (parseInt(reservationDuration, 10) * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: parseInt(amount, 10), // S'assurer que le montant est un entier
+      amount: parseInt(amount, 10), // Ensure the amount is an integer
       currency: currency,
       payment_method_types: ['card'],
-      capture_method: 'manual', // Pour créer une autorisation
+      capture_method: 'manual', // Create an authorization
       description: reservationId,
       receipt_email: email,
       metadata: {
