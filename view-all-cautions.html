@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulter toutes les Cautions</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Consulter toutes les Cautions</h1>
+  <button id="fetch-cautions">Afficher toutes les Cautions</button>
+
+  <h2>Résultats</h2>
+  <table id="results-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>ID de Réservation</th>
+        <th>Montant</th>
+        <th>Devise</th>
+        <th>Date de Création</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
+  <script>
+    document.getElementById('fetch-cautions').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/.netlify/functions/view-all-cautions', {
+          method: 'GET',
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          const tbody = document.getElementById('results-table').getElementsByTagName('tbody')[0];
+          tbody.innerHTML = ''; // Clear previous results
+
+          result.paymentIntents.forEach(intent => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = intent.metadata.email;
+            row.insertCell().textContent = intent.description;
+            row.insertCell().textContent = (intent.amount / 100).toFixed(2); // Convert from cents
+            row.insertCell().textContent = intent.currency.toUpperCase();
+            row.insertCell().textContent = new Date(intent.created * 1000).toLocaleDateString();
+            row.insertCell().textContent = intent.status;
+          });
+        } else {
+          alert(result.error);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+      }
+    });
+  </script>
+</body>
+</html>
