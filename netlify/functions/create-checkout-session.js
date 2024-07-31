@@ -3,9 +3,17 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 exports.handler = async (event) => {
   const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
+  // Vérifiez que toutes les variables sont définies
+  if (!amount || !currency || !email || !reservationId || !clientConsent || !reservationDuration) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'All fields are required.' }),
+    };
+  }
+
   try {
     const now = new Date();
-    const endDate = new Date(now.getTime() + (reservationDuration * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
+    const endDate = new Date(now.getTime() + (parseInt(reservationDuration, 10) * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -17,11 +25,13 @@ exports.handler = async (event) => {
       metadata: {
         email: email,
         client_consent: clientConsent,
-        reservation_duration: reservationDuration.toString(),
+        reservation_duration: reservationDuration.toString(), // Assurez-vous que reservationDuration est un nombre ou une chaîne valide
         end_date: endDate.toISOString(),
         is_caution: 'true',
       },
     });
+
+    console.log('PaymentIntent created successfully:', paymentIntent);
 
     return {
       statusCode: 200,
