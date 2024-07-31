@@ -1,9 +1,6 @@
-//const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  console.log('Handler invoked for create-checkout-session');
-
   const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
   try {
@@ -14,7 +11,7 @@ exports.handler = async (event) => {
       amount: amount,
       currency: currency,
       payment_method_types: ['card'],
-      capture_method: 'manual',
+      capture_method: 'manual', // Pour créer une autorisation
       description: reservationId,
       receipt_email: email,
       metadata: {
@@ -25,8 +22,6 @@ exports.handler = async (event) => {
         is_caution: 'true',
       },
     });
-
-    console.log('PaymentIntent created with metadata:', paymentIntent.metadata);
 
     return {
       statusCode: 200,
