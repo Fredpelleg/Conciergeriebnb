@@ -15,4 +15,28 @@
   <script>
     document.getElementById('cancel-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const
+      const email = document.getElementById('email').value;
+      try {
+        const response = await fetch('/.netlify/functions/cancel-authorization', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        const result = await response.json();
+        console.log('Cancel result:', result);
+
+        if (response.ok) {
+          document.getElementById('message').style.color = 'green';
+          document.getElementById('message').textContent = 'Caution annulée avec succès';
+        } else {
+          document.getElementById('message').textContent = result.error;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('message').textContent = 'An error occurred';
+      }
+    });
+  </script>
+</body>
+</html>
