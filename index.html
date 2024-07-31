@@ -14,7 +14,6 @@
     <input type="email" id="email" placeholder="Votre email" required> <!-- Saisie de l'email -->
     <button type="submit">Payer la Caution</button>
   </form>
-  <div id="error-message" style="color: red;"></div>
   <script>
     const stripe = Stripe('pk_test_51HyIanFP8glmTVRLzwVosP8ZdIsI6wKyApyzGMWmgSjfXEHJ1Oo9qzReFUdZRHvJIyCZusaM6V4kLdZ28TwKF8AU00TBfPxsab');
     const elements = stripe.elements();
@@ -36,18 +35,13 @@
           body: JSON.stringify({ amount, currency: 'eur', email })
         });
 
-        console.log('Fetch response received');
-
         const result = await response.json();
         console.log('Response status:', response.status);
         console.log('Result:', result);
 
         if (response.ok) {
-          const { clientSecret, id } = result;
-          console.log('Client secret received:', clientSecret);
-          console.log('Payment Intent ID:', id);
-
-          const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          const { clientSecret } = result;
+          const { error } = await stripe.confirmCardPayment(clientSecret, {
             payment_method: {
               card: cardElement,
               billing_details: {
@@ -56,24 +50,19 @@
             },
           });
 
-          console.log('Stripe confirmCardPayment response received');
-
           if (error) {
             console.error('Error confirming card payment:', error.message);
-            document.getElementById('error-message').textContent = error.message;
+            window.location.href = 'error.html';
           } else {
-            console.log('Payment intent status:', paymentIntent.status);
-            if (paymentIntent.status === 'requires_capture') {
-              window.location.href = 'success.html';
-            }
+            window.location.href = 'success.html';
           }
         } else {
           console.error('Error response from server:', result.error);
-          document.getElementById('error-message').textContent = result.error || 'Unknown error during session creation';
+          window.location.href = 'error.html';
         }
       } catch (error) {
         console.error('Fetch error:', error.message);
-        document.getElementById('error-message').textContent = error.message || 'Unknown error during fetch request';
+        window.location.href = 'error.html';
       }
     });
   </script>
