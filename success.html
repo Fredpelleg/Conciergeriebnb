@@ -1,8 +1,16 @@
-...
-if (error) {
-  document.getElementById('error-message').textContent = error.message;
-} else if (paymentIntent.status === 'requires_capture') {
-  // L'autorisation est réussie
-  window.location.href = 'success.html';
-}
-...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement Réussi</title>
+</head>
+<body>
+  <h1>Paiement Réussi</h1>
+  <p>Votre paiement a été traité avec succès. Merci pour votre réservation.</p>
+  <script>
+    console.log('Success page loaded');
+  </script>
+</body>
+</html>
+
