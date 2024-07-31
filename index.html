@@ -58,9 +58,11 @@
             window.location.href = '/success.html';
           }
         } else {
+          console.error('Error response from server:', result.error); // Journaliser l'erreur
           window.location.href = `/error.html?error=${encodeURIComponent(result.error || 'Unknown error during session creation')}`;
         }
       } catch (error) {
+        console.error('Fetch error:', error.message); // Journaliser l'erreur
         window.location.href = `/error.html?error=${encodeURIComponent(error.message || 'Unknown error during fetch request')}`;
       }
     });
