@@ -9,11 +9,15 @@ exports.handler = async (event) => {
   try {
     stripeEvent = stripe.webhooks.constructEvent(event.body, sig, endpointSecret);
   } catch (err) {
+    console.error('Webhook signature verification failed.', err.message);
     return {
       statusCode: 400,
       body: `Webhook Error: ${err.message}`,
     };
   }
+
+  // Log the type of event received
+  console.log(`Received event: ${stripeEvent.type}`);
 
   switch (stripeEvent.type) {
     case 'payment_intent.amount_capturable_updated':
@@ -21,7 +25,7 @@ exports.handler = async (event) => {
       break;
 
     case 'payment_intent.canceled':
-      handleCanceled(stripeEvent);
+      await handleCanceled(stripeEvent);
       break;
 
     default:
@@ -36,6 +40,7 @@ exports.handler = async (event) => {
 
 async function handleAmountCapturableUpdated(stripeEvent) {
   const paymentIntent = stripeEvent.data.object;
+  console.log('Handling amount_capturable_updated for:', paymentIntent.id);
 
   if (paymentIntent.metadata.is_caution === 'true') {
     const reservationDuration = parseInt(paymentIntent.metadata.reservation_duration);
@@ -50,8 +55,10 @@ async function handleAmountCapturableUpdated(stripeEvent) {
       const newEndDate = new Date(now.getTime() + (newReservationDuration * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
 
       try {
+        console.log('Canceling existing PaymentIntent:', paymentIntent.id);
         await stripe.paymentIntents.cancel(paymentIntent.id);
 
+        console.log('Creating new PaymentIntent for:', paymentIntent.id);
         await stripe.paymentIntents.create({
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
@@ -66,6 +73,7 @@ async function handleAmountCapturableUpdated(stripeEvent) {
             is_caution: 'true',
           },
         });
+        console.log('New PaymentIntent created successfully.');
       } catch (error) {
         console.error(`Error reauthorizing PaymentIntent: ${error.message}`);
       }
@@ -73,8 +81,9 @@ async function handleAmountCapturableUpdated(stripeEvent) {
   }
 }
 
-function handleCanceled(stripeEvent) {
+async function handleCanceled(stripeEvent) {
   const canceledIntent = stripeEvent.data.object;
+  console.log('Handling canceled for:', canceledIntent.id);
 
   if (canceledIntent.metadata.is_caution === 'true') {
     console.log(`Caution annulée pour la réservation ${canceledIntent.description}`);
