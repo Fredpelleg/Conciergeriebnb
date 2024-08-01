@@ -1,13 +1,26 @@
 // Exemple de fonction Netlify pour créer un PaymentIntent
 const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+
 exports.handler = async (event) => {
-  const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
+  const { amount, currency, email, reservationId, clientConsent, reservationDuration, paymentMethodId } = JSON.parse(event.body);
 
   try {
     // Créer un nouveau client Stripe
     const customer = await stripe.customers.create({
       email: email,
       description: `Client pour la réservation ${reservationId}`,
+    });
+
+    // Attacher la méthode de paiement au client
+    await stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customer.id,
+    });
+
+    // Définir la méthode de paiement par défaut pour le client
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
     });
 
     const now = new Date();
@@ -21,6 +34,7 @@ exports.handler = async (event) => {
       description: reservationId,
       receipt_email: email,
       customer: customer.id, // Associer le client à l'intention de paiement
+      payment_method: paymentMethodId, // Associer la méthode de paiement
       metadata: {
         email: email,
         client_consent: clientConsent,
@@ -41,4 +55,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
