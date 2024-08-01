@@ -30,7 +30,7 @@ exports.handler = async (event) => {
         const newEndDate = new Date();
         newEndDate.setDate(newEndDate.getDate() + remainingDays + 2);
 
-        // Crée une nouvelle intention de paiement avec la même méthode de paiement
+        // Crée une nouvelle intention de paiement avec le même client et la même méthode de paiement
         const newPaymentIntent = await stripe.paymentIntents.create({
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
@@ -38,8 +38,9 @@ exports.handler = async (event) => {
           capture_method: 'manual',
           description: paymentIntent.description,
           receipt_email: paymentIntent.metadata.email,
-          payment_method: paymentIntent.payment_method, // Utilisation de la même méthode de paiement
-          confirm: true, // Confirme immédiatement l'intention de paiement
+          customer: paymentIntent.customer, // Réutiliser le même client
+          payment_method: paymentIntent.payment_method, // Utiliser la même méthode de paiement
+          confirm: true, // Confirmer immédiatement l'intention de paiement
           metadata: {
             email: paymentIntent.metadata.email,
             client_consent: paymentIntent.metadata.client_consent,
@@ -65,3 +66,4 @@ exports.handler = async (event) => {
     body: JSON.stringify({ received: true }),
   };
 };
+
