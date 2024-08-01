@@ -10,19 +10,13 @@ exports.handler = async (event) => {
     if (stripeEvent.type === 'payment_intent.canceled') {
       const paymentIntent = stripeEvent.data.object;
 
-      // Vérifiez si l'intention de paiement annulée est une caution
       if (paymentIntent.metadata.is_caution === 'true') {
-        console.log('Caution annulée détectée pour:', paymentIntent.id);
-
         const reservationDuration = parseInt(paymentIntent.metadata.reservation_duration);
 
-        // Vérifiez si la durée de la réservation est supérieure à 7 jours
         if (reservationDuration > 7) {
           const remainingDays = reservationDuration - 7;
-
-          // Créez une nouvelle intention de paiement pour prolonger la caution
           const newEndDate = new Date();
-          newEndDate.setDate(newEndDate.getDate() + remainingDays + 2); // +2 jours pour la visite après la réservation
+          newEndDate.setDate(newEndDate.getDate() + remainingDays + 2);
 
           try {
             const newPaymentIntent = await stripe.paymentIntents.create({
@@ -40,7 +34,6 @@ exports.handler = async (event) => {
                 is_caution: 'true',
               },
             });
-
             console.log('Nouvelle intention de paiement créée:', newPaymentIntent.id);
           } catch (error) {
             console.error('Erreur lors de la création de la nouvelle intention de paiement:', error.message);
@@ -61,3 +54,4 @@ exports.handler = async (event) => {
     };
   }
 };
+
