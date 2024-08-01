@@ -1,9 +1,8 @@
 [build]
-  publish = "/"  # Racine du projet pour les fichiers statiques
+  publish = "/"
   functions = "netlify/functions"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
