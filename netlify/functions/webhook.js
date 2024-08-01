@@ -1,10 +1,9 @@
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
   const sig = event.headers['stripe-signature'];
-
+  
   let stripeEvent;
 
   try {
@@ -31,7 +30,7 @@ exports.handler = async (event) => {
         const newEndDate = new Date();
         newEndDate.setDate(newEndDate.getDate() + remainingDays + 2);
 
-        // Crée une nouvelle intention de paiement
+        // Crée une nouvelle intention de paiement avec la même méthode de paiement
         const newPaymentIntent = await stripe.paymentIntents.create({
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
@@ -39,6 +38,8 @@ exports.handler = async (event) => {
           capture_method: 'manual',
           description: paymentIntent.description,
           receipt_email: paymentIntent.metadata.email,
+          payment_method: paymentIntent.payment_method, // Utilisation de la même méthode de paiement
+          confirm: true, // Confirme immédiatement l'intention de paiement
           metadata: {
             email: paymentIntent.metadata.email,
             client_consent: paymentIntent.metadata.client_consent,
@@ -49,20 +50,6 @@ exports.handler = async (event) => {
         });
 
         console.log(`Nouvelle intention de paiement créée : ${newPaymentIntent.id}`);
-
-        // Tente de confirmer la nouvelle intention de paiement si une méthode de paiement est disponible
-        if (newPaymentIntent.payment_method) {
-          try {
-            await stripe.paymentIntents.confirm(newPaymentIntent.id, {
-              payment_method: newPaymentIntent.payment_method,
-            });
-            console.log(`Intention de paiement confirmée : ${newPaymentIntent.id}`);
-          } catch (confirmError) {
-            console.error(`Erreur lors de la confirmation de l'intention : ${confirmError.message}`);
-          }
-        } else {
-          console.warn(`Aucune méthode de paiement disponible pour confirmer l'intention : ${newPaymentIntent.id}`);
-        }
       }
     }
   } catch (error) {
@@ -78,5 +65,3 @@ exports.handler = async (event) => {
     body: JSON.stringify({ received: true }),
   };
 };
-
-
