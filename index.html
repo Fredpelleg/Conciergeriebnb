@@ -37,7 +37,7 @@
   <div id="error-message" style="color: red;"></div>
   <script>
     // Déclarez votre clé publique Stripe dans une variable
-    const stripePublicKey = "{{STRIPE_PUBLIC_KEY}}";  // Cette variable sera remplacée par la valeur réelle de la clé publique par le processus de build
+    const stripePublicKey = "{{SECRET_PUBLIC_PROD}}";  // Cette variable sera remplacée par la valeur réelle de la clé publique par le processus de build
     
     // Initialisez Stripe avec la clé publique
     const stripe = Stripe(stripePublicKey);
