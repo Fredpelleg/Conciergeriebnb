@@ -7,34 +7,52 @@
   <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-  <h1>Test de Paiement de Caution</h1>
+  <h1>Paiement de Caution</h1>
   <form id="payment-form">
-    <div id="card-element"></div>
-    <input type="hidden" id="amount" value="5000">
-    <input type="hidden" id="currency" value="eur">
-    <input type="hidden" id="email" value="fpelleg@gmail.com">
-    <input type="hidden" id="reservationId" value="res_12345">
-    <input type="hidden" id="clientConsent" value="true">
-    <input type="hidden" id="reservationDuration" value="14">
+    <div id="card-element"></div> <!-- Élément pour la carte de crédit -->
+    <div id="payment-info">
+      <label for="amount">Montant :</label>
+      <input type="number" id="amount" name="amount" required>
+
+      <label for="currency">Devise :</label>
+      <select id="currency" name="currency" required>
+        <option value="eur">EUR</option>
+        <option value="usd">USD</option>
+      </select>
+
+      <label for="email">Email :</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="reservationId">ID de Réservation :</label>
+      <input type="text" id="reservationId" name="reservationId" required>
+
+      <label for="clientConsent">Consentement :</label>
+      <input type="checkbox" id="clientConsent" name="clientConsent" required> J'accepte les termes et conditions
+
+      <label for="reservationDuration">Durée de la Réservation (jours) :</label>
+      <input type="number" id="reservationDuration" name="reservationDuration" required>
+    </div>
     <button type="submit">Payer la Caution</button>
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
+    // Utilisez votre clé publique Stripe ici
     const stripe = Stripe('pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK');
+    
     const elements = stripe.elements();
     const cardElement = elements.create('card');
     cardElement.mount('#card-element');
 
     document.getElementById('payment-form').addEventListener('submit', async (event) => {
       event.preventDefault();
-      alert('Formulaire soumis');
 
-      const amount = document.getElementById('amount').value;
+      const amount = document.getElementById('amount').value * 100; // Convertir en centimes
       const currency = document.getElementById('currency').value;
       const email = document.getElementById('email').value;
       const reservationId = document.getElementById('reservationId').value;
-      const clientConsent = document.getElementById('clientConsent').value;
+      const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = document.getElementById('reservationDuration').value;
+      
       console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
 
       try {
@@ -55,7 +73,7 @@
             payment_method: {
               card: cardElement,
               billing_details: {
-                name: 'Jenny Rosen',
+                name: email, // Utiliser l'email comme nom pour cet exemple
               },
             },
           });
@@ -71,11 +89,4 @@
           console.log('Erreur du serveur:', result.error);
           document.getElementById('error-message').textContent = result.error;
         }
-      } catch (error) {
-        console.error('Erreur de Fetch:', error);
-        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
-      }
-    });
-  </script>
-</body>
-</html>
+      } catch (error
