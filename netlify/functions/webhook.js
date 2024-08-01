@@ -1,4 +1,4 @@
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
   const payload = event.body;
@@ -8,31 +8,40 @@ exports.handler = async (event) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     const stripeEvent = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
 
-    // Vérification de l'événement annulé
+    // Vérifie si l'événement est payment_intent.canceled
     if (stripeEvent.type === 'payment_intent.canceled') {
       const paymentIntent = stripeEvent.data.object;
+      console.log('Reçu payment_intent.canceled pour:', paymentIntent.id);
 
-      console.log('Paiement annulé:', paymentIntent.id);
+      // Vérifie si la réservation est une caution et que la durée > 7 jours
+      if (paymentIntent.metadata.is_caution === 'true' && parseInt(paymentIntent.metadata.reservation_duration) > 7) {
+        const newEndDate = new Date(paymentIntent.metadata.end_date);
+        const currentDate = new Date();
+        const remainingDays = Math.floor((newEndDate - currentDate) / (1000 * 60 * 60 * 24));
 
-      // Logique pour créer une nouvelle autorisation si nécessaire
-      if (paymentIntent.metadata.reservation_duration > 7) {
-        const newPaymentIntent = await stripe.paymentIntents.create({
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          payment_method_types: ['card'],
-          capture_method: 'manual',
-          description: paymentIntent.description,
-          receipt_email: paymentIntent.receipt_email,
-          metadata: paymentIntent.metadata, // Conserver les métadonnées
-        });
+        // Ne réautoriser que s'il reste plus de 7 jours
+        if (remainingDays > 7) {
+          const newPaymentIntent = await stripe.paymentIntents.create({
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            payment_method_types: ['card'],
+            capture_method: 'manual',
+            description: paymentIntent.description,
+            receipt_email: paymentIntent.receipt_email,
+            metadata: {
+              ...paymentIntent.metadata, // Copie les métadonnées existantes
+              end_date: new Date(newEndDate.setDate(newEndDate.getDate() + remainingDays)).toISOString(),
+            },
+          });
 
-        console.log('Nouvelle autorisation créée:', newPaymentIntent.id);
+          console.log('Nouvelle intention de paiement créée:', newPaymentIntent.id);
+        }
       }
     }
 
     return { statusCode: 200 };
   } catch (err) {
-    console.error('Erreur Webhook:', err.message);
-    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+    console.error('Erreur de webhook:', err.message);
+    return { statusCode: 400, body: `Erreur de webhook: ${err.message}` };
   }
 };
