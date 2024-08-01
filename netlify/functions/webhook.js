@@ -1,57 +1,82 @@
 const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
 
 exports.handler = async (event) => {
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   const sig = event.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let stripeEvent;
 
   try {
-    const stripeEvent = stripe.webhooks.constructEvent(event.body, sig, webhookSecret);
+    stripeEvent = stripe.webhooks.constructEvent(event.body, sig, endpointSecret);
+  } catch (err) {
+    console.error(`Erreur lors de la vérification de la signature : ${err.message}`);
+    return {
+      statusCode: 400,
+      body: `Erreur lors de la vérification de la signature : ${err.message}`,
+    };
+  }
 
-    if (stripeEvent.type === 'payment_intent.canceled') {
+  const eventType = stripeEvent.type;
+
+  try {
+    if (eventType === 'payment_intent.canceled') {
       const paymentIntent = stripeEvent.data.object;
+      console.log(`Caution annulée détectée pour : ${paymentIntent.id}`);
 
-      if (paymentIntent.metadata.is_caution === 'true') {
-        const reservationDuration = parseInt(paymentIntent.metadata.reservation_duration);
+      const reservationDuration = parseInt(paymentIntent.metadata.reservation_duration, 10);
+      const remainingDays = reservationDuration - 7;
 
-        if (reservationDuration > 7) {
-          const remainingDays = reservationDuration - 7;
-          const newEndDate = new Date();
-          newEndDate.setDate(newEndDate.getDate() + remainingDays + 2);
+      if (remainingDays > 0 && paymentIntent.metadata.is_caution === 'true') {
+        const newEndDate = new Date();
+        newEndDate.setDate(newEndDate.getDate() + remainingDays + 2);
 
+        // Crée une nouvelle intention de paiement
+        const newPaymentIntent = await stripe.paymentIntents.create({
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          payment_method_types: ['card'],
+          capture_method: 'manual',
+          description: paymentIntent.description,
+          receipt_email: paymentIntent.metadata.email,
+          metadata: {
+            email: paymentIntent.metadata.email,
+            client_consent: paymentIntent.metadata.client_consent,
+            reservation_duration: remainingDays.toString(),
+            end_date: newEndDate.toISOString(),
+            is_caution: 'true',
+          },
+        });
+
+        console.log(`Nouvelle intention de paiement créée : ${newPaymentIntent.id}`);
+
+        // Tente de confirmer la nouvelle intention de paiement si une méthode de paiement est disponible
+        if (newPaymentIntent.payment_method) {
           try {
-            const newPaymentIntent = await stripe.paymentIntents.create({
-              amount: paymentIntent.amount,
-              currency: paymentIntent.currency,
-              payment_method_types: ['card'],
-              capture_method: 'manual',
-              description: paymentIntent.description,
-              receipt_email: paymentIntent.metadata.email,
-              metadata: {
-                email: paymentIntent.metadata.email,
-                client_consent: paymentIntent.metadata.client_consent,
-                reservation_duration: remainingDays.toString(),
-                end_date: newEndDate.toISOString(),
-                is_caution: 'true',
-              },
+            await stripe.paymentIntents.confirm(newPaymentIntent.id, {
+              payment_method: newPaymentIntent.payment_method,
             });
-            console.log('Nouvelle intention de paiement créée:', newPaymentIntent.id);
-          } catch (error) {
-            console.error('Erreur lors de la création de la nouvelle intention de paiement:', error.message);
+            console.log(`Intention de paiement confirmée : ${newPaymentIntent.id}`);
+          } catch (confirmError) {
+            console.error(`Erreur lors de la confirmation de l'intention : ${confirmError.message}`);
           }
+        } else {
+          console.warn(`Aucune méthode de paiement disponible pour confirmer l'intention : ${newPaymentIntent.id}`);
         }
       }
     }
-
+  } catch (error) {
+    console.error(`Erreur lors du traitement de l'événement ${eventType} : ${error.message}`);
     return {
-      statusCode: 200,
-      body: JSON.stringify({ received: true }),
-    };
-  } catch (err) {
-    console.error('Erreur lors du traitement du webhook:', err.message);
-    return {
-      statusCode: 400,
-      body: `Webhook Error: ${err.message}`,
+      statusCode: 500,
+      body: `Erreur lors du traitement de l'événement ${eventType} : ${error.message}`,
     };
   }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ received: true }),
+  };
 };
+
 
