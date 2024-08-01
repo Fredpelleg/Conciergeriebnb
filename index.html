@@ -36,9 +36,11 @@
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
-    // Utilisez votre clé publique Stripe ici
-    const stripe = Stripe(process.env.SECRET_PUBLIC_PROD);
-    //SECRET_PUBLIC_PROD
+    // Déclarez votre clé publique Stripe dans une variable
+    const stripePublicKey = "{{STRIPE_PUBLIC_KEY}}";  // Cette variable sera remplacée par la valeur réelle de la clé publique par le processus de build
+    
+    // Initialisez Stripe avec la clé publique
+    const stripe = Stripe(stripePublicKey);
     
     const elements = stripe.elements();
     const cardElement = elements.create('card');
@@ -90,4 +92,11 @@
           console.log('Erreur du serveur:', result.error);
           document.getElementById('error-message').textContent = result.error;
         }
-      } catch (error
+      } catch (error) {
+        console.error('Erreur de Fetch:', error);
+        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
+      }
+    });
+  </script>
+</body>
+</html>
