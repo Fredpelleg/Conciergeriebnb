@@ -40,12 +40,33 @@ exports.handler = async (event) => {
           customerId = customer.id;
         }
 
+        // Récupération de la méthode de paiement
+        const paymentMethodId = paymentIntent.payment_method;
+
+        if (!paymentMethodId) {
+          console.error("Aucune méthode de paiement n'a été trouvée pour l'intention de paiement initiale.");
+          return {
+            statusCode: 400,
+            body: 'Erreur : Aucune méthode de paiement n\'est disponible pour l\'intention de paiement initiale.',
+          };
+        }
+
+        // Attacher la méthode de paiement au client
+        await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+
+        // Mise à jour du client avec la méthode de paiement par défaut
+        await stripe.customers.update(customerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+
         // Création d'une nouvelle intention de paiement
         const newPaymentIntent = await stripe.paymentIntents.create({
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
           customer: customerId,
-          payment_method: paymentIntent.payment_method,
+          payment_method: paymentMethodId,
           off_session: true,
           confirm: true,
           payment_method_types: ['card'],
@@ -74,6 +95,7 @@ exports.handler = async (event) => {
     };
   }
 };
+
 
 
 
