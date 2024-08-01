@@ -1,4 +1,35 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+
+exports.handler = async (event) => {
+  const payload = event.body;
+  const sig = event.headers['stripe-signature'];
+
+  try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const stripeEvent = stripe.webhooks.constructEvent(payload, sig, webhookSecret);
+
+    // Handle different event types
+    if (stripeEvent.type === 'payment_intent.canceled') {
+      const paymentIntent = stripeEvent.data.object;
+
+      console.log('PaymentIntent canceled:', paymentIntent.id);
+
+      // Implement logic for cancellation
+      // E.g., Update database, send notifications, etc.
+    }
+
+    // Handle other event types if needed
+    if (stripeEvent.type === 'payment_intent.succeeded') {
+      // Handle successful payment
+    }
+
+    return { statusCode: 200 };
+  } catch (err) {
+    console.error('Webhook Error:', err.message);
+    return { statusCode: 400, body: `Webhook Error: ${err.message}` };
+  }
+};
+);
 
 exports.handler = async (event) => {
   const sig = event.headers['stripe-signature'];
