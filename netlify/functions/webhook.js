@@ -24,18 +24,29 @@ exports.handler = async (event) => {
     console.log(`Caution annulée détectée pour : ${paymentIntent.id}`);
 
     try {
-      // Création d'un nouveau client Stripe
-      const customer = await stripe.customers.create({
+      // Vérifiez si un client existe déjà avec cet e-mail
+      let customer;
+      const existingCustomers = await stripe.customers.list({
         email: paymentIntent.metadata.email,
-        description: `Client pour la réservation ${paymentIntent.description}`,
+        limit: 1,
       });
+
+      if (existingCustomers.data.length > 0) {
+        customer = existingCustomers.data[0];
+      } else {
+        // Création d'un nouveau client Stripe si nécessaire
+        customer = await stripe.customers.create({
+          email: paymentIntent.metadata.email,
+          description: `Client pour la réservation ${paymentIntent.description}`,
+        });
+      }
 
       // Attacher le PaymentMethod au client
       await stripe.paymentMethods.attach(paymentIntent.payment_method, {
         customer: customer.id,
       });
 
-      // Créer une nouvelle intention de paiement avec le PaymentMethod
+      // Créer une nouvelle intention de paiement avec le PaymentMethod attaché
       const newPaymentIntent = await stripe.paymentIntents.create({
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
