@@ -36,7 +36,7 @@
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
-    // Utilisez la clé publique Stripe ici
+    // Utilisation de la clé publique Stripe
     const stripePublicKey = "pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK";
     const stripe = Stripe(stripePublicKey);
 
@@ -54,6 +54,8 @@
       const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = document.getElementById('reservationDuration').value;
 
+      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+
       try {
         const response = await fetch('/.netlify/functions/create-checkout-session', {
           method: 'POST',
@@ -62,6 +64,7 @@
         });
 
         const result = await response.json();
+        console.log('Résultat:', result);
 
         if (response.ok) {
           const { clientSecret } = result;
