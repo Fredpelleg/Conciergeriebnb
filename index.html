@@ -36,6 +36,7 @@
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
+    // Utilisation de la clé publique Stripe
     const stripePublicKey = "pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK";
     const stripe = Stripe(stripePublicKey);
 
@@ -46,25 +47,16 @@
     document.getElementById('payment-form').addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const amount = parseFloat(document.getElementById('amount').value) * 100; // Convertir en centimes
+      const amount = document.getElementById('amount').value * 100; // Convertir en centimes
       const currency = document.getElementById('currency').value;
       const email = document.getElementById('email').value;
       const reservationId = document.getElementById('reservationId').value;
       const clientConsent = document.getElementById('clientConsent').checked;
-      const reservationDuration = parseInt(document.getElementById('reservationDuration').value);
+      const reservationDuration = document.getElementById('reservationDuration').value;
 
-      // Vérification des champs manquants
-      let missingFields = [];
-      if (!amount) missingFields.push("Montant");
-      if (!currency) missingFields.push("Devise");
-      if (!email) missingFields.push("Email");
-      if (!reservationId) missingFields.push("ID de Réservation");
-      if (!reservationDuration) missingFields.push("Durée de la Réservation");
-      if (!clientConsent) missingFields.push("Consentement");
-
-      if (missingFields.length > 0) {
-        const missingFieldsString = missingFields.join(', ');
-        window.location.href = `/erreurpaiement.html?error=Les champs suivants sont requis : ${encodeURIComponent(missingFieldsString)}`;
+      // Vérification des champs du formulaire
+      if (!amount || !currency || !email || !reservationId || !reservationDuration || !clientConsent) {
+        document.getElementById('error-message').textContent = 'Tous les champs sont requis.';
         return;
       }
 
@@ -76,6 +68,7 @@
         });
 
         const result = await response.json();
+        console.log('Résultat:', result);
 
         if (response.ok) {
           const { clientSecret } = result;
@@ -83,7 +76,7 @@
             payment_method: {
               card: cardElement,
               billing_details: {
-                name: email,
+                email: email,
               },
             },
           });
@@ -98,7 +91,7 @@
         }
       } catch (error) {
         console.error('Erreur de Fetch:', error);
-        window.location.href = `/erreurpaiement.html?error=${encodeURIComponent('Une erreur s\'est produite lors du traitement du paiement')}`;
+        window.location.href = `/erreurpaiement.html?error=${encodeURIComponent('Une erreur s\'est produite lors du traitement du paiement: ' + error.message)}`;
       }
     });
   </script>
