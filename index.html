@@ -55,6 +55,8 @@
       const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = parseInt(document.getElementById('reservationDuration').value);
 
+      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+
       // Initialiser un tableau pour stocker les erreurs
       let errors = [];
 
