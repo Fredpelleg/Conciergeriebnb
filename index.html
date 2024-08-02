@@ -55,12 +55,20 @@
       const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = parseInt(document.getElementById('reservationDuration').value);
 
-      // Debugging
-      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+      // Initialiser un tableau pour stocker les erreurs
+      let errors = [];
 
       // Vérification que tous les champs sont remplis
-      if (!amount || !currency || !email || !reservationId || !reservationDuration || !clientConsent) {
-        document.getElementById('error-message').textContent = "Tous les champs sont requis.";
+      if (!amount) errors.push("Le montant est requis.");
+      if (!currency) errors.push("La devise est requise.");
+      if (!email) errors.push("L'email est requis.");
+      if (!reservationId) errors.push("L'ID de réservation est requis.");
+      if (!reservationDuration) errors.push("La durée de la réservation est requise.");
+      if (!clientConsent) errors.push("Le consentement du client est requis.");
+
+      // Afficher les erreurs si elles existent
+      if (errors.length > 0) {
+        document.getElementById('error-message').innerHTML = errors.join('<br>');
         return;
       }
 
