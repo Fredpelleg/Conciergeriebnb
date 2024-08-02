@@ -36,7 +36,6 @@
   </form>
   <div id="error-message" style="color: red;"></div>
   <script>
-    // Utilisation de la clé publique Stripe
     const stripePublicKey = "pk_live_51HyIanFP8glmTVRLH2JzmVnBiQgh8Vne7pJL4QqvAx7i4cnsWK5WLmGAMR2wJTXeGPjj99A22RTP9vJymXRFP2aK00rlHL7yVK";
     const stripe = Stripe(stripePublicKey);
 
@@ -47,7 +46,6 @@
     document.getElementById('payment-form').addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      // Récupération des valeurs des champs
       const amount = parseFloat(document.getElementById('amount').value) * 100; // Convertir en centimes
       const currency = document.getElementById('currency').value;
       const email = document.getElementById('email').value;
@@ -55,22 +53,18 @@
       const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = parseInt(document.getElementById('reservationDuration').value);
 
-      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+      // Vérification des champs manquants
+      let missingFields = [];
+      if (!amount) missingFields.push("Montant");
+      if (!currency) missingFields.push("Devise");
+      if (!email) missingFields.push("Email");
+      if (!reservationId) missingFields.push("ID de Réservation");
+      if (!reservationDuration) missingFields.push("Durée de la Réservation");
+      if (!clientConsent) missingFields.push("Consentement");
 
-      // Initialiser un tableau pour stocker les erreurs
-      let errors = [];
-
-      // Vérification que tous les champs sont remplis
-      if (!amount) errors.push("Le montant est requis.");
-      if (!currency) errors.push("La devise est requise.");
-      if (!email) errors.push("L'email est requis.");
-      if (!reservationId) errors.push("L'ID de réservation est requis.");
-      if (!reservationDuration) errors.push("La durée de la réservation est requise.");
-      if (!clientConsent) errors.push("Le consentement du client est requis.");
-
-      // Afficher les erreurs si elles existent
-      if (errors.length > 0) {
-        document.getElementById('error-message').innerHTML = errors.join('<br>');
+      if (missingFields.length > 0) {
+        const missingFieldsString = missingFields.join(', ');
+        window.location.href = `/erreurpaiement.html?error=Les champs suivants sont requis : ${encodeURIComponent(missingFieldsString)}`;
         return;
       }
 
@@ -82,7 +76,6 @@
         });
 
         const result = await response.json();
-        console.log('Résultat:', result);
 
         if (response.ok) {
           const { clientSecret } = result;
@@ -96,19 +89,16 @@
           });
 
           if (error) {
-            // Rediriger vers la page d'erreur en cas d'erreur
             window.location.href = `/erreurpaiement.html?error=${encodeURIComponent(error.message)}`;
           } else if (paymentIntent.status === 'requires_capture') {
             window.location.href = '/success.html';
           }
         } else {
-          // Rediriger vers la page d'erreur si la réponse n'est pas OK
           window.location.href = `/erreurpaiement.html?error=${encodeURIComponent(result.error)}`;
         }
       } catch (error) {
         console.error('Erreur de Fetch:', error);
-        // Rediriger vers la page d'erreur en cas d'erreur de fetch
-        window.location.href = `/erreurpaiement.html?error=${encodeURIComponent('Une erreur s\'est produite')}`;
+        window.location.href = `/erreurpaiement.html?error=${encodeURIComponent('Une erreur s\'est produite lors du traitement du paiement')}`;
       }
     });
   </script>
