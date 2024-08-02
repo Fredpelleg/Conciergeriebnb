@@ -20,23 +20,21 @@ exports.handler = async (event) => {
     try {
       // Vérifier si c'est une caution à renouveler
       if (paymentIntent.metadata.is_caution === 'true' && paymentIntent.metadata.reservation_duration > 7) {
-        // Rechercher le client
-        const customer = await stripe.customers.retrieve(paymentIntent.customer);
+        // Récupérer le client associé à l'intention de paiement
+        const customerId = paymentIntent.customer;
 
-        if (!customer) {
-          console.error('Client non trouvé:', paymentIntent.customer);
-          return { statusCode: 404, body: 'Client non trouvé' };
+        if (!customerId) {
+          console.error('Client non attaché à la méthode de paiement:', paymentIntent.payment_method);
+          return { statusCode: 400, body: 'Client non trouvé pour l\'intention de paiement annulée' };
         }
 
         // Créer une nouvelle intention de paiement avec la même méthode de paiement
         const newPaymentIntent = await stripe.paymentIntents.create({
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
-          customer: paymentIntent.customer,
+          customer: customerId, // Utiliser le client existant
           payment_method_types: ['card'],
           capture_method: 'manual',
-          description: paymentIntent.description,
-          receipt_email: paymentIntent.receipt_email,
           payment_method: paymentIntent.payment_method, // Réutiliser la même méthode de paiement
           metadata: {
             email: paymentIntent.metadata.email,
