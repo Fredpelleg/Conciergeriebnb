@@ -1,79 +1,61 @@
-const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
-//const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+//const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  const sig = event.headers['stripe-signature'];
-
-  let stripeEvent;
+  const stripeEvent = JSON.parse(event.body);
 
   try {
-    // Vérification de la signature du webhook
-    stripeEvent = stripe.webhooks.constructEvent(event.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error(`Erreur de vérification du webhook : ${err.message}`);
+    switch (stripeEvent.type) {
+      case 'payment_intent.canceled':
+        const paymentIntent = stripeEvent.data.object;
+        console.log(`Caution annulée détectée pour : ${paymentIntent.id}`);
+
+        // Vérifiez la durée de la réservation pour décider de créer une nouvelle caution
+        if (paymentIntent.metadata.is_caution === "true") {
+          const reservationDuration = parseInt(paymentIntent.metadata.reservation_duration, 10);
+          if (reservationDuration > 7) {
+            const newEndDate = new Date(Date.now() + ((reservationDuration - 7) * 24 * 60 * 60 * 1000)).toISOString();
+
+            // Créez une nouvelle intention de paiement pour la prolongation
+            const newPaymentIntent = await stripe.paymentIntents.create({
+              amount: paymentIntent.amount,
+              currency: paymentIntent.currency,
+              customer: paymentIntent.customer, // Réutilisez le client existant
+              payment_method: paymentIntent.payment_method, // Réutilisez le PaymentMethod
+              capture_method: 'manual',
+              confirm: true,
+              description: paymentIntent.metadata.reservationId,
+              metadata: {
+                reservationId: paymentIntent.metadata.reservationId,
+                client_consent: paymentIntent.metadata.client_consent,
+                reservation_duration: (reservationDuration - 7).toString(),
+                end_date: newEndDate,
+                is_caution: "true",
+              },
+            });
+
+            console.log(`Nouvelle intention de paiement créée: ${newPaymentIntent.id}`);
+          }
+        }
+        break;
+
+      default:
+        console.log(`Événement non pris en charge : ${stripeEvent.type}`);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ received: true }),
+    };
+  } catch (error) {
+    console.error('Erreur lors du traitement de l\'événement webhook :', error);
     return {
       statusCode: 400,
-      body: `Webhook Error: ${err.message}`,
+      body: `Erreur lors du traitement de l'événement webhook : ${error.message}`,
     };
   }
-
-  // Traiter l'événement payment_intent.canceled
-  if (stripeEvent.type === 'payment_intent.canceled') {
-    const paymentIntent = stripeEvent.data.object;
-
-    console.log(`Caution annulée détectée pour : ${paymentIntent.id}`);
-
-    try {
-      // Vérifiez si un client existe déjà avec cet e-mail
-      let customer;
-      const existingCustomers = await stripe.customers.list({
-        email: paymentIntent.metadata.email,
-        limit: 1,
-      });
-
-      if (existingCustomers.data.length > 0) {
-        customer = existingCustomers.data[0];
-      } else {
-        // Création d'un nouveau client Stripe si nécessaire
-        customer = await stripe.customers.create({
-          email: paymentIntent.metadata.email,
-          description: `Client pour la réservation ${paymentIntent.description}`,
-        });
-      }
-
-      // Attacher le PaymentMethod au client
-      await stripe.paymentMethods.attach(paymentIntent.payment_method, {
-        customer: customer.id,
-      });
-
-      // Créer une nouvelle intention de paiement avec le PaymentMethod attaché
-      const newPaymentIntent = await stripe.paymentIntents.create({
-        amount: paymentIntent.amount,
-        currency: paymentIntent.currency,
-        customer: customer.id,
-        payment_method: paymentIntent.payment_method,
-        off_session: true,
-        confirm: true,
-        capture_method: 'manual',
-        description: paymentIntent.description,
-        metadata: paymentIntent.metadata,
-      });
-
-      console.log(`Nouvelle intention de paiement créée : ${newPaymentIntent.id}`);
-    } catch (error) {
-      console.error(`Erreur lors du traitement de l'événement webhook : ${error.message}`);
-      return {
-        statusCode: 500,
-        body: `Erreur lors du traitement de l'événement webhook : ${error.message}`,
-      };
-    }
-  }
-
-  return {
-    statusCode: 200,
-    body: 'Webhook handled',
-  };
 };
+
 
 
 
