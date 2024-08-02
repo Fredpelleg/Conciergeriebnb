@@ -1,21 +1,19 @@
-// Exemple de fonction Netlify pour créer un PaymentIntent
 const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
 require('dotenv').config();
-//const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
   try {
     const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
-    // Vérifier si le client existe déjà avec l'e-mail fourni
+    // Check if customer already exists
     const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
 
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      console.log(`Client existant trouvé: ${customerId}`);
+      console.log(`Existing customer found: ${customerId}`);
     } else {
-      // Créer un nouveau client si non existant
+      // Create new customer if not existing
       const customer = await stripe.customers.create({
         email,
         metadata: {
@@ -24,14 +22,14 @@ exports.handler = async (event) => {
         }
       });
       customerId = customer.id;
-      console.log(`Nouveau client créé: ${customerId}`);
+      console.log(`New customer created: ${customerId}`);
     }
 
-    // Créer l'intention de paiement
+    // Create PaymentIntent and attach the payment method
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      customer: customerId, // Associer le client à l'intention de paiement
+      customer: customerId,
       payment_method_types: ['card'],
       capture_method: 'manual',
       metadata: {
@@ -44,23 +42,17 @@ exports.handler = async (event) => {
       }
     });
 
-    console.log(`Intention de paiement créée: ${paymentIntent.id}`);
+    console.log(`Payment intent created: ${paymentIntent.id}`);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ clientSecret: paymentIntent.client_secret }),
     };
   } catch (error) {
-    console.error('Erreur lors de la création de l\'intention de paiement:', error.message);
+    console.error('Error creating payment intent:', error.message);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message }),
     };
   }
 };
-
-
-
-
-
-
