@@ -50,4 +50,11 @@ exports.handler = async (event) => {
         console.info(`Nouvelle intention de paiement créée: ${newPaymentIntent.id}`);
       }
     } catch (error) {
-      console.error('Erreur lors du traitement de l\'événement
+      console.error('Erreur lors du traitement de l\'événement webhook:', error.message);
+      return { statusCode: 500, body: `Erreur lors du traitement de l'événement webhook: ${error.message}` };
+    }
+  }
+
+  return { statusCode: 200, body: 'Événement reçu' };
+};
+
