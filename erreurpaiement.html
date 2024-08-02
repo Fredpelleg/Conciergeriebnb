@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erreur de Paiement</title>
+</head>
+<body>
+  <h1>Erreur de Paiement</h1>
+  <p id="error-message">Une erreur s'est produite lors du traitement de votre paiement.</p>
+  <a href="index.html">Retour à la page de paiement</a>
+
+  <script>
+    // Obtenez le message d'erreur depuis l'URL
+    const params = new URLSearchParams(window.location.search);
+    const errorMessage = params.get('error');
+    if (errorMessage) {
+      document.getElementById('error-message').textContent = decodeURIComponent(errorMessage);
+    }
+  </script>
+</body>
+</html>
