@@ -10,20 +10,20 @@ exports.handler = async (event) => {
     let customer;
     const existingCustomers = await stripe.customers.list({
       email: email,
-      limit: 1,
+      limit: 1, // Limitez la recherche à un client pour réduire le nombre de résultats
     });
 
     if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0];
+      customer = existingCustomers.data[0]; // Utilisez le client existant
     } else {
-      // Création d'un nouveau client Stripe
+      // Créez un nouveau client Stripe si aucun n'existe
       customer = await stripe.customers.create({
         email: email,
-        description: `Client pour la réservation ${reservationId}`,
+        // Ajoutez d'autres informations pertinentes pour le client ici, si nécessaire
       });
     }
 
-    // Attachez le PaymentMethod au client
+    // Assurez-vous que le PaymentMethod est attaché au client
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customer.id,
     });
@@ -35,22 +35,21 @@ exports.handler = async (event) => {
       },
     });
 
-    // Créer un PaymentIntent avec le PaymentMethod attaché
+    // Créez un PaymentIntent avec le PaymentMethod attaché
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: currency,
-      customer: customer.id,
+      customer: customer.id, // Associez le client au PaymentIntent
       payment_method: paymentMethodId,
       capture_method: 'manual',
-      off_session: true,
       confirm: true,
-      description: reservationId,
+      description: reservationId, // Utilisez l'ID de réservation pour la description
       metadata: {
-        email: email,
+        reservationId: reservationId,
         client_consent: clientConsent,
         reservation_duration: reservationDuration.toString(),
         end_date: new Date(Date.now() + (reservationDuration * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000)).toISOString(),
-        is_caution: 'true',
+        is_caution: "true"
       },
     });
 
@@ -59,12 +58,13 @@ exports.handler = async (event) => {
       body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
     };
   } catch (error) {
-    console.error(`Erreur lors de la création de l'intention de paiement : ${error.message}`);
+    console.error('Erreur lors de la création du PaymentIntent:', error);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message }),
     };
   }
 };
+
 
 
