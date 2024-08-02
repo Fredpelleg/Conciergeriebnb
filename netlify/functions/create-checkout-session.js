@@ -1,67 +1,64 @@
 // Exemple de fonction Netlify pour créer un PaymentIntent
 const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
+require('dotenv').config();
 //const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
-
-  if (!amount || !currency || !email || !reservationId || !reservationDuration || !clientConsent) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Tous les champs sont requis.' }),
-    };
-  }
-
   try {
-    // Rechercher un client existant par email
-    const existingCustomers = await stripe.customers.list({
-      email: email,
-      limit: 1
-    });
+    const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
 
-    let customer;
-    if (existingCustomers.data.length > 0) {
-      // Utiliser le client existant
-      customer = existingCustomers.data[0];
+    // Vérifier si le client existe déjà avec l'e-mail fourni
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    let customerId;
+
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      console.log(`Client existant trouvé: ${customerId}`);
     } else {
-      // Créer un nouveau client
-      customer = await stripe.customers.create({
-        email: email
+      // Créer un nouveau client si non existant
+      const customer = await stripe.customers.create({
+        email,
+        metadata: {
+          clientConsent,
+          reservationId
+        }
       });
+      customerId = customer.id;
+      console.log(`Nouveau client créé: ${customerId}`);
     }
 
-    const now = new Date();
-    const endDate = new Date(now.getTime() + (reservationDuration * 24 * 60 * 60 * 1000) + (2 * 24 * 60 * 60 * 1000));
-
+    // Créer l'intention de paiement
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: currency,
+      amount,
+      currency,
+      customer: customerId, // Associer le client à l'intention de paiement
       payment_method_types: ['card'],
       capture_method: 'manual',
-      description: reservationId,
-      receipt_email: email,
-      customer: customer.id, // Attacher le client
       metadata: {
-        email: email,
-        client_consent: clientConsent.toString(),
-        reservation_duration: reservationDuration.toString(),
-        end_date: endDate.toISOString(),
+        email,
+        clientConsent,
+        reservationId,
+        reservationDuration,
+        end_date: new Date(new Date().setDate(new Date().getDate() + parseInt(reservationDuration))).toISOString(),
         is_caution: "true"
-      },
+      }
     });
+
+    console.log(`Intention de paiement créée: ${paymentIntent.id}`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ clientSecret: paymentIntent.client_secret, id: paymentIntent.id }),
+      body: JSON.stringify({ clientSecret: paymentIntent.client_secret }),
     };
   } catch (error) {
-    console.error('Erreur lors de la création de l\'intention de paiement:', error);
+    console.error('Erreur lors de la création de l\'intention de paiement:', error.message);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message }),
     };
   }
 };
+
 
 
 
