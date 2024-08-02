@@ -1,6 +1,7 @@
 {
   "name": "votre-projet",
   "version": "1.0.0",
+  "description": "Votre projet",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
@@ -8,8 +9,11 @@
   },
   "dependencies": {
     "dotenv": "^16.0.0",
-    "stripe": "^8.0.0",
-    // ajoutez d'autres dépendances ici
+    "stripe": "^8.0.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^8.0.0"
   }
 }
+
 
