@@ -22,7 +22,7 @@ exports.handler = async (event) => {
       if (paymentIntent.metadata.is_caution === 'true' && paymentIntent.metadata.reservation_duration > 7) {
         // Rechercher le client
         const customer = await stripe.customers.retrieve(paymentIntent.customer);
-        
+
         if (!customer) {
           console.error('Client non trouvé:', paymentIntent.customer);
           return { statusCode: 404, body: 'Client non trouvé' };
@@ -37,7 +37,7 @@ exports.handler = async (event) => {
           capture_method: 'manual',
           description: paymentIntent.description,
           receipt_email: paymentIntent.receipt_email,
-          payment_method: paymentIntent.payment_method, // Reuse the same payment method
+          payment_method: paymentIntent.payment_method, // Réutiliser la même méthode de paiement
           metadata: {
             email: paymentIntent.metadata.email,
             client_consent: paymentIntent.metadata.client_consent,
@@ -47,10 +47,7 @@ exports.handler = async (event) => {
           },
         });
 
-        console.info(`Nouvelle intention de paiement créée: ${newPayment
-
-
-
-
-
-
+        console.info(`Nouvelle intention de paiement créée: ${newPaymentIntent.id}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du traitement de l\'événement
