@@ -1,13 +1,15 @@
 {
-  "name": "conciergeriebnb",
+  "name": "votre-projet",
   "version": "1.0.0",
-  "description": "Serverless functions for handling security deposits via Stripe and Smoobu",
   "main": "index.js",
   "scripts": {
-    "start": "netlify dev"
+    "start": "node server.js",
+    "build": "netlify build"
   },
   "dependencies": {
+    "dotenv": "^16.0.0",
     "stripe": "^8.0.0",
-    "node-fetch": "^2.6.1"
+    // ajoutez d'autres dépendances ici
   }
 }
+
