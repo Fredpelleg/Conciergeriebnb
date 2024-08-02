@@ -47,6 +47,7 @@
     document.getElementById('payment-form').addEventListener('submit', async (event) => {
       event.preventDefault();
 
+      // Récupération des valeurs des champs
       const amount = parseFloat(document.getElementById('amount').value) * 100; // Convertir en centimes
       const currency = document.getElementById('currency').value;
       const email = document.getElementById('email').value;
@@ -54,12 +55,14 @@
       const clientConsent = document.getElementById('clientConsent').checked;
       const reservationDuration = parseInt(document.getElementById('reservationDuration').value);
 
+      // Debugging
+      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
+
+      // Vérification que tous les champs sont remplis
       if (!amount || !currency || !email || !reservationId || !reservationDuration || !clientConsent) {
         document.getElementById('error-message').textContent = "Tous les champs sont requis.";
         return;
       }
-
-      console.log('Données du formulaire:', { amount, currency, email, reservationId, clientConsent, reservationDuration });
 
       try {
         const response = await fetch('/.netlify/functions/create-checkout-session', {
@@ -83,16 +86,19 @@
           });
 
           if (error) {
-            document.getElementById('error-message').textContent = error.message;
+            // Rediriger vers la page d'erreur en cas d'erreur
+            window.location.href = `/erreurpaiement.html?error=${encodeURIComponent(error.message)}`;
           } else if (paymentIntent.status === 'requires_capture') {
             window.location.href = '/success.html';
           }
         } else {
-          document.getElementById('error-message').textContent = result.error;
+          // Rediriger vers la page d'erreur si la réponse n'est pas OK
+          window.location.href = `/erreurpaiement.html?error=${encodeURIComponent(result.error)}`;
         }
       } catch (error) {
         console.error('Erreur de Fetch:', error);
-        document.getElementById('error-message').textContent = 'Une erreur s\'est produite';
+        // Rediriger vers la page d'erreur en cas d'erreur de fetch
+        window.location.href = `/erreurpaiement.html?error=${encodeURIComponent('Une erreur s\'est produite')}`;
       }
     });
   </script>
