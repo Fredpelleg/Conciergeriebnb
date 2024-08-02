@@ -11,7 +11,7 @@
   <a href="index.html">Retour à la page de paiement</a>
 
   <script>
-    // Obtenez le message d'erreur depuis l'URL
+    // Récupérer le message d'erreur depuis l'URL
     const params = new URLSearchParams(window.location.search);
     const errorMessage = params.get('error');
     if (errorMessage) {
