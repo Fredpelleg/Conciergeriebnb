@@ -2,7 +2,7 @@ const stripe = require('stripe')(process.env.STRIPE_NEW_SECRET_KEY);
 
 exports.handler = async (event) => {
   try {
-    const { amount, currency, email, reservationId, clientConsent, reservationDuration } = JSON.parse(event.body);
+    const { amount, currency, email, reservationId, clientConsent, reservationDuration, paymentMethodId } = JSON.parse(event.body);
 
     // Recherche du client existant par e-mail
     const customers = await stripe.customers.list({ email, limit: 1 });
@@ -19,12 +19,24 @@ exports.handler = async (event) => {
       customerId = customer.id;
     }
 
+    // Attacher le PaymentMethod au client
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+
+    // Mettre à jour le client avec la méthode de paiement par défaut
+    await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
+
     // Créer l'intention de paiement
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
       customer: customerId,
-      payment_method_types: ['card'],
+      payment_method: paymentMethodId,
+      off_session: true,
+      confirm: true,
       capture_method: 'manual',
       metadata: {
         email,
