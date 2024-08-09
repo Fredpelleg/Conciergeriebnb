@@ -17,42 +17,28 @@ exports.handler = async (event) => {
     console.info(`Caution annulée détectée pour : ${paymentIntent.id}`);
 
     try {
-      if (paymentIntent.metadata.is_caution === 'true' && paymentIntent.metadata.reservation_duration > 7) {
-        const customerId = paymentIntent.customer;
-        const paymentMethodId = paymentIntent.payment_method;
+      // Récupérer le PaymentMethod et Customer associés à l'intention de paiement
+      const paymentMethodId = paymentIntent.payment_method;
+      const customerId = paymentIntent.customer;
 
-        if (!customerId || !paymentMethodId) {
-          console.error('Client ou méthode de paiement non attachée:', paymentMethodId);
-          return { statusCode: 400, body: 'Client ou méthode de paiement non trouvée pour l\'intention de paiement annulée' };
-        }
-
-        // Attacher la méthode de paiement si elle n'est pas encore attachée
-        const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
-
-        if (paymentMethod.customer !== customerId) {
-          await stripe.paymentMethods.attach(paymentMethodId, {
-            customer: customerId,
-          });
-        }
-
-        const newPaymentIntent = await stripe.paymentIntents.create({
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          customer: customerId,
-          payment_method: paymentMethodId,
-          capture_method: 'manual',
-          payment_method_types: ['card'],
-          metadata: {
-            email: paymentIntent.metadata.email,
-            client_consent: paymentIntent.metadata.client_consent,
-            reservation_duration: paymentIntent.metadata.reservation_duration,
-            end_date: paymentIntent.metadata.end_date,
-            is_caution: "true"
-          },
-        });
-
-        console.info(`Nouvelle intention de paiement créée: ${newPaymentIntent.id}`);
+      if (!paymentMethodId || !customerId) {
+        console.error('PaymentMethod ou Customer non attaché.');
+        return { statusCode: 400, body: 'PaymentMethod ou Customer non trouvé.' };
       }
+
+      // Créer une nouvelle intention de paiement avec la même méthode de paiement
+      const newPaymentIntent = await stripe.paymentIntents.create({
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        customer: customerId, // Utiliser le client existant
+        payment_method: paymentMethodId, // Réutiliser la même méthode de paiement
+        off_session: true,  // Permet la réutilisation du PaymentMethod
+        confirm: true, // Confirmer automatiquement la nouvelle intention de paiement
+        capture_method: 'manual',
+        metadata: paymentIntent.metadata
+      });
+
+      console.info(`Nouvelle intention de paiement créée: ${newPaymentIntent.id}`);
     } catch (error) {
       console.error('Erreur lors du traitement de l\'événement webhook:', error.message);
       return { statusCode: 500, body: `Erreur lors du traitement de l'événement webhook: ${error.message}` };
